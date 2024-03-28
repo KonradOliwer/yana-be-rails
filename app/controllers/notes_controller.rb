@@ -1,11 +1,13 @@
 class NotesController < ApplicationController
   rescue_from ActiveRecord::RecordNotFound, with: -> { render json: NotesErrorResponse.new(code: NOT_FOUND, message: "Note not found"), status: :not_found }
   rescue_from ActiveRecord::RecordInvalid, with: ->(error) { render json: NotesErrorResponse.new(code: VALIDATION_ERROR, message: error.message), status: :bad_request }
+  rescue_from ActiveRecord::RecordNotUnique, with: ->(error) { render json: NotesErrorResponse.new(code: ALREADY_EXISTS, message: nil), status: :bad_request }
 
   # Error codes
   NOT_FOUND = "NOTE_NOT_FOUND"
   ALREADY_EXISTS = "NOTE_ALREADY_EXISTS"
   VALIDATION_ERROR = "NOTE_VALIDATION_ERROR"
+  WRITE_ERROR = "NOTE_WRITE_ERROR"
 
   def index
     notes = Note.all
@@ -18,7 +20,8 @@ class NotesController < ApplicationController
     if note.save
       render json: note, status: :created
     else
-      render json: note.errors, status: :bad_request
+      logger.error("error on create: #{note.errors.full_messages}")
+      render json: NotesErrorResponse.new(code: WRITE_ERROR, message: nil), status: :bad_request
     end
   end
 
@@ -33,7 +36,8 @@ class NotesController < ApplicationController
     if note.save
       render json: note
     else
-      render json: note.errors, status: :bad_request
+      logger.error("error on create: #{note.errors.full_messages}")
+      render json: NotesErrorResponse.new(code: WRITE_ERROR, message: nil), status: :bad_request
     end
   end
 

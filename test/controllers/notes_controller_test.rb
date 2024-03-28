@@ -49,6 +49,20 @@ class NotesControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Validation failed: Name is too long (maximum is 50 characters)", json_response['message']
   end
 
+  test "should two notes with same name" do
+    assert_difference("Note.count") do
+      post notes_url, params: { name: "name1", content: "content1" }, as: :json
+    end
+    assert_difference("Note.count", 0) do
+      post notes_url, params: { name: "name1", content: "content2" }, as: :json
+    end
+
+    assert_response :bad_request
+    json_response = JSON.parse(response.body)
+    assert_equal "NOTE_ALREADY_EXISTS", json_response['code']
+    assert_nil json_response['message']
+  end
+
   test "should update note" do
     post notes_url, params: { name: "name1", content: "content1" }, as: :json
     post_json_response = JSON.parse(response.body)
@@ -87,6 +101,18 @@ class NotesControllerTest < ActionDispatch::IntegrationTest
     put_json_response = JSON.parse(response.body)
     assert_equal "NOTE_VALIDATION_ERROR", put_json_response['code']
     assert_equal "Validation failed: Name is too long (maximum is 50 characters)", put_json_response['message']
+  end
+
+  test "should fail update note if name is used by another note" do
+    post notes_url, params: { name: "name2", content: "content2" }, as: :json
+    post notes_url, params: { name: "name1", content: "content1" }, as: :json
+    post_json_response = JSON.parse(response.body)
+
+    put note_url({ noteId: post_json_response['id'] }), params: { id: post_json_response['id'], name: "name2", content: "content3" }, as: :json
+    put_json_response = JSON.parse(response.body)
+    assert_response :bad_request
+    assert_equal "NOTE_ALREADY_EXISTS", put_json_response['code']
+    assert_nil put_json_response['message']
   end
 
   test "should destroy note" do
