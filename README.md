@@ -4,6 +4,7 @@ This is learning project. So take everything with grain of salt and don't emulat
 
 This is [ruby](https://www.ruby-lang.org/en/) + [Rails](https://rubyonrails.org/) implementation of backend
 For more details about project read frontend [README.md](https://github.com/KonradOliwer/yana-fe-react/)
+Make sure to use same tag version for frontend and backend to ensure compatibility.
 
 This app is not production ready, as it has no production configuration.
 
